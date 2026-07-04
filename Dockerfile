@@ -16,9 +16,6 @@ COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./
 COPY --from=frontend-build /app/frontend/dist ./static
-RUN mkdir -p /app/data /app/downloads /app/tmp \
-  && useradd --create-home --uid 10001 appuser \
-  && chown -R appuser:appuser /app
-USER appuser
+RUN mkdir -p /app/data /app/downloads /app/tmp
 EXPOSE 8080
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

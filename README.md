@@ -157,6 +157,8 @@ Compose 默认挂载：
 ./tmp        -> /app/tmp        # 临时文件
 ```
 
+NAS 上如果这些目录不存在，Docker 会自动创建。当前镜像默认以容器 root 用户运行，避免 NAS 挂载目录因 UID/GID 不匹配导致无法写入。
+
 建议备份：
 
 ```text
