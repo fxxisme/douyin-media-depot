@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient
 import {
   Archive,
   CheckCircle2,
+  CircleHelp,
   CircleAlert,
   Database,
   Download,
@@ -295,9 +296,11 @@ function AccountsPage() {
   const [name, setName] = useState("");
   const [cookie, setCookie] = useState("");
   const [editingId, setEditingId] = useState("");
+  const [showCookieGuide, setShowCookieGuide] = useState(false);
   const queryClient = useQueryClient();
   const accounts = useQuery({ queryKey: ["accounts"], queryFn: api.accounts });
   const selected = useMemo(() => accounts.data?.find((item) => String(item.id) === editingId), [accounts.data, editingId]);
+  const cookieCheck = useMemo(() => inspectCookie(cookie), [cookie]);
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["accounts"] });
   const save = useMutation({
     mutationFn: () => (selected ? api.updateAccount(selected.id, { name, cookie: cookie || undefined }) : api.createAccount({ name, cookie })),
@@ -333,6 +336,11 @@ function AccountsPage() {
           }}
         >
           <SectionTitle icon={UserRound} title={selected ? "编辑账号" : "新增账号"} compact />
+          <button className="btn mb-4 h-9 w-full" type="button" onClick={() => setShowCookieGuide((value) => !value)}>
+            <CircleHelp size={16} />
+            获取 Cookie 指引
+          </button>
+          {showCookieGuide && <CookieGuide />}
           <label className="mb-2 block text-sm font-medium">选择已有账号</label>
           <select className="input mb-3" value={editingId} onChange={(event) => onEditChange(event.target.value)}>
             <option value="">新增账号</option>
@@ -346,6 +354,7 @@ function AccountsPage() {
           <input className="input mb-3" value={name} onChange={(event) => setName(event.target.value)} placeholder="我的抖音" />
           <label className="mb-2 block text-sm font-medium">Cookie</label>
           <textarea className="textarea" value={cookie} onChange={(event) => setCookie(event.target.value)} placeholder="sessionid=..." />
+          <CookieCheckView result={cookieCheck} />
           <ErrorLine error={save.error ?? verify.error ?? sync.error ?? toggle.error ?? remove.error} />
           <button className="btn btn-primary mt-4 w-full" disabled={!name || (!selected && !cookie) || save.isPending}>
             保存
@@ -393,6 +402,61 @@ function AccountsPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+function inspectCookie(value: string) {
+  const trimmed = value.trim();
+  const hasCookieShape = /(^|;\s*)[A-Za-z0-9_.-]+=/.test(trimmed);
+  const hasSessionid = /(^|;\s*)sessionid=/.test(trimmed);
+  const hasSidGuard = /(^|;\s*)sid_guard=/.test(trimmed);
+  if (!trimmed) {
+    return { level: "empty", message: "粘贴 Cookie 后会自动检查关键字段。", hasSessionid, hasSidGuard };
+  }
+  if (!hasCookieShape) {
+    return { level: "bad", message: "这段内容看起来不像 Cookie。", hasSessionid, hasSidGuard };
+  }
+  if (hasSessionid && hasSidGuard) {
+    return { level: "good", message: "格式看起来可用，建议保存后再点校验。", hasSessionid, hasSidGuard };
+  }
+  return { level: "warn", message: "缺少关键字段，允许保存，但后续校验可能失败。", hasSessionid, hasSidGuard };
+}
+
+function CookieCheckView({ result }: { result: ReturnType<typeof inspectCookie> }) {
+  const tone =
+    result.level === "good"
+      ? "border-green-600/20 bg-green-600/10 text-green-700"
+      : result.level === "bad"
+        ? "border-ember/20 bg-ember/10 text-ember"
+        : "border-line bg-paper text-ink/65";
+  return (
+    <div className={`mt-3 rounded-md border px-3 py-2 text-sm ${tone}`}>
+      <p>{result.message}</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <span className="badge bg-white">sessionid: {result.hasSessionid ? "已检测到" : "缺少"}</span>
+        <span className="badge bg-white">sid_guard: {result.hasSidGuard ? "已检测到" : "缺少"}</span>
+      </div>
+    </div>
+  );
+}
+
+function CookieGuide() {
+  return (
+    <div className="mb-4 rounded-md border border-line bg-paper p-3 text-sm text-ink/70">
+      <p className="font-medium text-ink">Chrome / Edge 获取方式</p>
+      <ol className="mt-2 list-decimal space-y-1 pl-5">
+        <li>在浏览器打开抖音网页版并完成登录。</li>
+        <li>按 F12 打开开发者工具，进入 Network。</li>
+        <li>
+          刷新页面，点任意 <code>douyin.com</code> 请求。
+        </li>
+        <li>在 Headers 里复制 Request Headers 下的 Cookie。</li>
+        <li>
+          粘贴到这里，确认包含 <code>sessionid</code> 或 <code>sid_guard</code>。
+        </li>
+      </ol>
+      <p className="mt-2 text-ember">Cookie 等同登录态，不要发给别人，也不要提交到 Git。</p>
+    </div>
   );
 }
 

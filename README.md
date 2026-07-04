@@ -301,6 +301,37 @@ PATCH  /settings
 }
 ```
 
+## Cookie 获取方式
+
+当前版本采用手动 Cookie 登录态，不做扫码自动化，不读取本机浏览器 Cookie。
+
+Chrome / Edge 通用步骤：
+
+```text
+1. 打开抖音网页版并完成登录。
+2. 按 F12 打开开发者工具。
+3. 切到 Network。
+4. 刷新页面。
+5. 点任意 douyin.com 请求。
+6. 在 Headers -> Request Headers 中复制 Cookie。
+7. 回到账号页粘贴保存。
+```
+
+建议 Cookie 中至少包含：
+
+```text
+sessionid
+sid_guard
+```
+
+页面会自动检测这些字段。缺少字段时仍允许保存，但校验可能失败。
+
+安全提醒：
+
+```text
+Cookie 等同登录态，不要发给别人，不要贴到 issue，不要提交到 Git。
+```
+
 ## 项目结构
 
 ```text
