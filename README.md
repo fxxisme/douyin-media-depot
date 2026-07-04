@@ -92,6 +92,58 @@ FFPROBE_BIN=ffprobe
 
 只有在本地 Windows 直接运行后端、不使用 Docker 时，才需要你自己安装 ffmpeg，或接受设置页显示“未找到”。
 
+## 域名反代检查
+
+Docker 镜像里的前端默认请求相对路径：
+
+```text
+/api/v1
+```
+
+所以域名部署时，浏览器实际请求会是：
+
+```text
+https://你的域名/api/v1/auth/me
+```
+
+不会请求 `127.0.0.1:8080`。
+
+nginx 反代到 frp 暴露端口时，建议保持根路径转发：
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:23088;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+不要把项目挂在子路径下，例如 `/douyin/`，当前前端按域名根路径部署。
+
+如果访问域名看到：
+
+```json
+{"detail":"Not Found"}
+```
+
+通常说明前端静态文件没有进入当前运行镜像。执行：
+
+```bash
+git pull
+docker compose down
+docker compose up -d --build
+```
+
+如果是拉远程镜像，先确认 GitHub Actions 新镜像构建完成，再执行：
+
+```bash
+docker compose pull
+docker compose down
+docker compose up -d
+```
+
 ## 本地开发启动
 
 ### 后端
