@@ -7,7 +7,7 @@
 第一版推荐单容器：
 
 ```text
-8080 -> Web UI + API
+3088 -> Web UI + API
 data -> SQLite / 配置
 downloads -> 视频和音频
 tmp -> 临时文件
@@ -33,6 +33,7 @@ douyin-media-depot/
 ```text
 APP_SECRET_KEY=随机长字符串
 ADMIN_PASSWORD=你的管理密码
+HOST_PORT=3088
 PORT=8080
 ```
 
@@ -72,7 +73,7 @@ docker compose up -d
 访问：
 
 ```text
-http://NAS_IP:8080
+http://NAS_IP:3088
 ```
 
 ## 数据备份
@@ -144,4 +145,3 @@ MAX_CONCURRENT_DOWNLOADS=1 或 2
 ```
 
 NAS 环境不建议默认开高并发。
-

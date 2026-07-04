@@ -7,7 +7,7 @@ services:
     container_name: douyin-media-depot
     restart: unless-stopped
     ports:
-      - "${PORT:-8080}:8080"
+      - "${HOST_PORT:-3088}:8080"
     env_file:
       - .env
     environment:

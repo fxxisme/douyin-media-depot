@@ -70,8 +70,10 @@ docker compose up -d --build
 访问：
 
 ```text
-http://NAS_IP:8080
+http://NAS_IP:3088
 ```
+
+默认端口映射是 `3088:8080`：NAS 对外访问 `3088`，容器内部服务仍监听 `8080`。如需改宿主机端口，可在 `.env` 中调整 `HOST_PORT`。
 
 ### 3. ffmpeg 说明
 
