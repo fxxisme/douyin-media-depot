@@ -162,6 +162,9 @@ function MediaPage() {
   const [keyword, setKeyword] = useState("");
   const [author, setAuthor] = useState("");
   const [accountId, setAccountId] = useState("");
+  const [manualUrl, setManualUrl] = useState("");
+  const [manualTitle, setManualTitle] = useState("");
+  const [manualAccountId, setManualAccountId] = useState("");
   const queryClient = useQueryClient();
   const accounts = useQuery({ queryKey: ["accounts"], queryFn: api.accounts });
   const media = useQuery({
@@ -180,10 +183,51 @@ function MediaPage() {
     mutationFn: (sourceId: number) => api.createTasks([sourceId], mediaType),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
   });
+  const createManualDownload = useMutation({
+    mutationFn: async () => {
+      const source = await api.createManualSource({
+        account_id: Number(manualAccountId),
+        url: manualUrl,
+        title: manualTitle || undefined,
+      });
+      await api.createTasks([source.id], "video");
+      return source;
+    },
+    onSuccess: async () => {
+      setManualUrl("");
+      setManualTitle("");
+      await queryClient.invalidateQueries({ queryKey: ["sources"] });
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["media"] });
+    },
+  });
 
   return (
     <section>
       <PageHeader title="媒体" description="默认看音频；来源列表用于把已同步条目加入下载任务。" />
+      <form
+        className="panel mb-4 grid gap-3 p-4 md:grid-cols-[180px_1fr_180px_auto]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          createManualDownload.mutate();
+        }}
+      >
+        <select className="input" value={manualAccountId} onChange={(event) => setManualAccountId(event.target.value)}>
+          <option value="">选择账号</option>
+          {(accounts.data ?? []).map((account) => (
+            <option value={account.id} key={account.id}>
+              {account.name}
+            </option>
+          ))}
+        </select>
+        <input className="input" placeholder="粘贴抖音视频链接" value={manualUrl} onChange={(event) => setManualUrl(event.target.value)} />
+        <input className="input" placeholder="标题，可选" value={manualTitle} onChange={(event) => setManualTitle(event.target.value)} />
+        <button className="btn btn-primary" disabled={!manualAccountId || !manualUrl || createManualDownload.isPending}>
+          {createManualDownload.isPending && <Loader2 className="animate-spin" size={16} />}
+          添加并下载
+        </button>
+        {createManualDownload.error && <div className="md:col-span-4"><ErrorLine error={createManualDownload.error} /></div>}
+      </form>
       <div className="mb-4 grid gap-3 md:grid-cols-[1fr_160px_160px_160px]">
         <input className="input" placeholder="搜索标题或文件名" value={keyword} onChange={(event) => setKeyword(event.target.value)} />
         <input className="input" placeholder="作者" value={author} onChange={(event) => setAuthor(event.target.value)} />

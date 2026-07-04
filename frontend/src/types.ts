@@ -32,7 +32,7 @@ export type SourceItem = {
   id: number;
   account_id: number;
   account_name: string | null;
-  source_type: "liked" | "favorite";
+  source_type: "liked" | "favorite" | "manual";
   platform_item_id: string;
   title: string | null;
   author_name: string | null;

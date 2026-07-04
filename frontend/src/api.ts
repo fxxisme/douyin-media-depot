@@ -55,6 +55,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ source_type, limit: 100 }),
     }),
+  createManualSource: (payload: { account_id: number; url: string; title?: string }) =>
+    request<SourceItem>("/sources/manual", { method: "POST", body: JSON.stringify(payload) }),
   sources: (filters: { account_id?: number; source_type?: string; keyword?: string; downloaded?: boolean }) =>
     request<Page<SourceItem>>(`/sources${params({ ...filters, page: 1, page_size: 20 })}`),
   tasks: (status?: string) => request<Page<DownloadTask>>(`/tasks${params({ status, page: 1, page_size: 50 })}`),

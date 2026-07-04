@@ -12,6 +12,7 @@
 - 媒体、来源、任务、设置页面。
 - SQLite 数据持久化。
 - 下载任务状态流转和失败原因展示。
+- 支持手动粘贴抖音视频链接并通过 `yt-dlp` 尝试下载视频。
 - 媒体文件路径安全校验。
 - Docker 单容器部署，镜像内自动安装 `ffmpeg` 和 `ffprobe`。
 
@@ -34,6 +35,7 @@ SQLAlchemy 2.x
 SQLite
 cryptography
 ffmpeg / ffprobe
+yt-dlp
 ```
 
 部署：
@@ -294,8 +296,8 @@ PATCH  /settings
 {
   "data": null,
   "error": {
-    "code": "download_not_configured",
-    "message": "真实下载适配器尚未接入",
+    "code": "yt_dlp_failed",
+    "message": "yt-dlp 下载失败",
     "detail": {}
   }
 }
@@ -331,6 +333,25 @@ sid_guard
 ```text
 Cookie 等同登录态，不要发给别人，不要贴到 issue，不要提交到 Git。
 ```
+
+## 手动视频链接下载
+
+第一版先支持更稳的单条链接下载：
+
+```text
+账号页保存 Cookie
+-> 媒体页选择账号
+-> 粘贴抖音视频链接
+-> 添加并下载
+-> 下载文件进入 downloads/videos/{account_slug}/
+```
+
+说明：
+
+- 当前手动链接下载先支持 `video`。
+- 音频抽取和 `both` 会在后续接入。
+- 点赞/收藏列表自动同步仍未接入，后续再做专用解析器。
+- 下载能力依赖 `yt-dlp`，Docker 镜像会随 Python 依赖一起安装。
 
 ## 项目结构
 

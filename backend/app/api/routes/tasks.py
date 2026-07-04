@@ -10,7 +10,7 @@ from app.db.models import DownloadTask, SourceItem, utc_now
 from app.schemas import TaskCreate
 from app.services.pagination import paginate
 from app.services.serializers import task_to_dict
-from app.services.tasks import run_download_placeholder
+from app.services.tasks import run_download_task
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -34,8 +34,14 @@ def create_tasks(payload: TaskCreate, db: DbSession, _user: CurrentUser):
         created.append(task)
     db.commit()
     for task in created:
-        db.refresh(task)
-        run_download_placeholder(db, task)
+        task = db.scalar(
+            select(DownloadTask)
+            .options(selectinload(DownloadTask.source_item).selectinload(SourceItem.account))
+            .where(DownloadTask.id == task.id)
+        )
+        if task is None:
+            continue
+        run_download_task(db, task)
     return ok([task_to_dict(task) for task in created])
 
 
@@ -47,7 +53,7 @@ def list_tasks(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
 ):
-    stmt = select(DownloadTask).options(selectinload(DownloadTask.source_item)).order_by(DownloadTask.created_at.desc())
+    stmt = select(DownloadTask).options(selectinload(DownloadTask.source_item).selectinload(SourceItem.account)).order_by(DownloadTask.created_at.desc())
     if status:
         stmt = stmt.where(DownloadTask.status == status)
     items, total = paginate(db, stmt, page, page_size)
@@ -72,7 +78,7 @@ def retry_task(task_id: int, response: Response, db: DbSession, _user: CurrentUs
     task.updated_at = utc_now()
     db.commit()
     db.refresh(task)
-    run_download_placeholder(db, task)
+    run_download_task(db, task)
     return ok(task_to_dict(task))
 
 

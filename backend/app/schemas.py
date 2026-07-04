@@ -28,6 +28,12 @@ class TaskCreate(BaseModel):
     download_type: str = Field(pattern="^(video|audio|both)$")
 
 
+class ManualSourceCreate(BaseModel):
+    account_id: int
+    url: str = Field(min_length=1, max_length=2000)
+    title: str | None = Field(default=None, max_length=300)
+
+
 class SettingsUpdate(BaseModel):
     max_concurrent_downloads: int | None = Field(default=None, ge=1, le=8)
     audio_extract_mode: str | None = Field(default=None, pattern="^copy$")
