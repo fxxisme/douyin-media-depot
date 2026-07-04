@@ -149,7 +149,7 @@ change-this-password
 
 ## 数据目录
 
-Compose 默认挂载：
+默认只使用 clone 出来的项目目录，不需要访问 NAS 其他位置。Compose 挂载关系：
 
 ```text
 ./data       -> /app/data       # SQLite 数据库
@@ -157,7 +157,21 @@ Compose 默认挂载：
 ./tmp        -> /app/tmp        # 临时文件
 ```
 
-NAS 上如果这些目录不存在，Docker 会自动创建。当前镜像默认以容器 root 用户运行，避免 NAS 挂载目录因 UID/GID 不匹配导致无法写入。
+也就是说，如果项目 clone 到：
+
+```text
+/volume1/docker/douyin-media-depot
+```
+
+下载文件就在：
+
+```text
+/volume1/docker/douyin-media-depot/downloads
+```
+
+仓库里保留了这些目录的 `.gitkeep` 占位文件，实际数据库、下载文件、临时文件和日志不会提交到 Git。
+
+当前镜像默认以容器 root 用户运行，避免 NAS 挂载目录因 UID/GID 不匹配导致无法写入。
 
 建议备份：
 

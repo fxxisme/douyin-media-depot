@@ -2,10 +2,23 @@
 .env.*
 !.env.example
 
-data/
-downloads/
-tmp/
-logs/
+data/*
+downloads/*
+downloads/videos/*
+downloads/audios/*
+downloads/covers/*
+tmp/*
+logs/*
+!data/.gitkeep
+!downloads/.gitkeep
+!downloads/videos/
+!downloads/videos/.gitkeep
+!downloads/audios/
+!downloads/audios/.gitkeep
+!downloads/covers/
+!downloads/covers/.gitkeep
+!tmp/.gitkeep
+!logs/.gitkeep
 
 *.db
 *.db-shm
@@ -21,4 +34,3 @@ __pycache__/
 .mypy_cache/
 .venv/
 venv/
-
