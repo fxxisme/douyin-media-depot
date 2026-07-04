@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #202420;
+  background: #f7f6f1;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium text-ink transition hover:border-moss hover:bg-paper focus:outline-none focus:ring-2 focus:ring-lake/30 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply border-lake bg-lake text-white hover:border-lake hover:bg-lake/90;
+  }
+
+  .btn-danger {
+    @apply border-ember text-ember hover:border-ember hover:bg-ember/10;
+  }
+
+  .input {
+    @apply h-10 w-full rounded-md border border-line bg-white px-3 text-sm outline-none transition placeholder:text-ink/35 focus:border-lake focus:ring-2 focus:ring-lake/20;
+  }
+
+  .textarea {
+    @apply min-h-28 w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none transition placeholder:text-ink/35 focus:border-lake focus:ring-2 focus:ring-lake/20;
+  }
+
+  .panel {
+    @apply rounded-lg border border-line bg-white shadow-soft;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full border border-line px-2 py-0.5 text-xs font-medium;
+  }
+}

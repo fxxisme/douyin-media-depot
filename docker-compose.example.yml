@@ -1,0 +1,23 @@
+services:
+  douyin-media-depot:
+    image: ghcr.io/fxxisme/douyin-media-depot:latest
+    container_name: douyin-media-depot
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      TZ: Asia/Shanghai
+      HOST: 0.0.0.0
+      PORT: 8080
+      DATA_DIR: /app/data
+      DOWNLOAD_DIR: /app/downloads
+      TEMP_DIR: /app/tmp
+      DATABASE_URL: sqlite:////app/data/app.db
+      FFMPEG_BIN: ffmpeg
+      FFPROBE_BIN: ffprobe
+    volumes:
+      - ./data:/app/data
+      - ./downloads:/app/downloads
+      - ./tmp:/app/tmp
