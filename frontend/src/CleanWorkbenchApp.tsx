@@ -321,13 +321,13 @@ function MediaPage() {
               }}
             />
             <div className="toolbar-actions">
-              <button className="btn btn-small" disabled={!selectableSourceIds.length} onClick={() => setSelectedSourceIds(selectableSourceIds)}>
+              <button className="btn btn-small" type="button" disabled={!selectableSourceIds.length} onClick={() => setSelectedSourceIds(selectableSourceIds)}>
                 全选未下载
               </button>
-              <button className="btn btn-small" disabled={!selectedCount} onClick={() => setSelectedSourceIds([])}>
+              <button className="btn btn-small" type="button" disabled={!selectedCount} onClick={() => setSelectedSourceIds([])}>
                 清空
               </button>
-              <button className="btn btn-primary btn-small" disabled={!selectedCount || createTasks.isPending} onClick={() => createTasks.mutate(selectedSourceIds)}>
+              <button className="btn btn-primary btn-small" type="button" disabled={!selectedCount || createTasks.isPending} onClick={() => createTasks.mutate(selectedSourceIds)}>
                 {createTasks.isPending && <Loader2 className="spin" size={15} />}
                 下载所选{selectedCount ? `(${selectedCount})` : ""}
               </button>
@@ -409,7 +409,6 @@ function SourceRow({
     <article className={`source-row ${source.downloaded ? "is-downloaded" : ""}`}>
       <label className="source-check">
         <input type="checkbox" checked={selected} disabled={disabled} onChange={onToggle} aria-label={`选择 ${source.title ?? source.platform_item_id}`} />
-        <span />
       </label>
       <div className="thumb-frame">{source.cover_url ? <img src={source.cover_url} alt="" loading="lazy" /> : <Film size={20} />}</div>
       <div className="source-copy">
@@ -420,7 +419,7 @@ function SourceRow({
         <p>
           {source.author_name ?? "未知作者"} · {sourceTypeLabel(source.source_type)}
         </p>
-        <button className="btn btn-small" disabled={source.downloaded || pending} onClick={onDownload}>
+        <button className="btn btn-small" type="button" disabled={source.downloaded || pending} onClick={onDownload}>
           <Download size={15} />
           下载{mediaType === "audio" ? "音频" : "视频"}
         </button>
