@@ -492,7 +492,8 @@ a {
 .film-strip,
 .media-ledger,
 .account-list,
-.task-list {
+.task-list,
+.log-list {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -635,7 +636,8 @@ a {
 
 .media-row,
 .account-row,
-.task-row {
+.task-row,
+.log-card {
   min-width: 0;
   background: var(--paper-soft);
   border: 1px solid var(--line);
@@ -774,7 +776,8 @@ a {
 }
 
 .account-list,
-.task-list {
+.task-list,
+.log-list {
   max-height: calc(100vh - 184px);
   display: grid;
   gap: 10px;
@@ -782,7 +785,8 @@ a {
 }
 
 .account-row,
-.task-row {
+.task-row,
+.log-card {
   display: grid;
   gap: 11px;
 }
@@ -837,6 +841,36 @@ a {
   height: 100%;
   background: var(--signal);
   transition: width 220ms ease;
+}
+
+.log-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.log-source {
+  margin: 0;
+  color: var(--signal-dark);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.log-tail {
+  max-height: 240px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #171d1a;
+  color: #f2efe6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .error-line,
@@ -946,7 +980,8 @@ a {
   .film-strip,
   .media-ledger,
   .account-list,
-  .task-list {
+  .task-list,
+  .log-list {
     max-height: 560px;
   }
 }

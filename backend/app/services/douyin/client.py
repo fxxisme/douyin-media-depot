@@ -5,6 +5,7 @@ import json
 import mimetypes
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -51,7 +52,15 @@ class YtDlpDownloadResult:
 
 
 class YtDlpAdapter:
-    def download_video(self, *, url: str, cookie: str, output_dir: Path, filename_prefix: str) -> YtDlpDownloadResult:
+    def download_video(
+        self,
+        *,
+        url: str,
+        cookie: str,
+        output_dir: Path,
+        filename_prefix: str,
+        cancel_event: threading.Event | None = None,
+    ) -> YtDlpDownloadResult:
         output_dir.mkdir(parents=True, exist_ok=True)
         cookie_file = output_dir / f".{filename_prefix}.cookies.txt"
         output_template = str(output_dir / f"{filename_prefix}-%(title).80B.%(ext)s")
@@ -73,7 +82,7 @@ class YtDlpAdapter:
                 output_template,
                 url,
             ]
-            completed = subprocess.run(command, capture_output=True, text=True, timeout=600, check=False)
+            completed = _run_process(command=command, timeout_seconds=600, cancel_event=cancel_event, timeout_code="yt_dlp_timeout")
             stderr_tail = (completed.stderr or completed.stdout or "")[-8192:]
             if completed.returncode != 0:
                 raise DouyinAdapterError("yt_dlp_failed", stderr_tail or "yt-dlp 下载失败")
@@ -212,6 +221,7 @@ class DirectDouyinDownloader:
         cookie: str,
         output_dir: Path,
         filename_prefix: str,
+        cancel_event: threading.Event | None = None,
     ) -> YtDlpDownloadResult:
         source = _load_raw_aweme(source_raw_json)
         urls = _extract_download_urls(source)
@@ -226,16 +236,27 @@ class DirectDouyinDownloader:
         last_error: DouyinAdapterError | None = None
         for index, url in enumerate(urls, start=1):
             try:
-                path = self._download_once(url=url, cookie=cookie, output_dir=output_dir, filename_prefix=filename_prefix, index=index)
+                path = self._download_once(url=url, cookie=cookie, output_dir=output_dir, filename_prefix=filename_prefix, index=index, cancel_event=cancel_event)
                 return YtDlpDownloadResult(path=path, title=title, duration=duration, uploader=uploader, video_id=video_id)
             except DouyinAdapterError as exc:
+                if exc.code == "task_canceled":
+                    raise
                 last_error = exc
                 continue
         if last_error:
             raise last_error
         raise DouyinAdapterError("download_failed", "视频下载失败")
 
-    def _download_once(self, *, url: str, cookie: str, output_dir: Path, filename_prefix: str, index: int) -> Path:
+    def _download_once(
+        self,
+        *,
+        url: str,
+        cookie: str,
+        output_dir: Path,
+        filename_prefix: str,
+        index: int,
+        cancel_event: threading.Event | None = None,
+    ) -> Path:
         request = urllib.request.Request(
             url,
             headers={
@@ -258,6 +279,8 @@ class DirectDouyinDownloader:
                     final_path.unlink()
                 with tmp_path.open("wb") as file:
                     while True:
+                        if cancel_event is not None and cancel_event.is_set():
+                            raise DouyinAdapterError("task_canceled", "任务已取消")
                         chunk = response.read(1024 * 256)
                         if not chunk:
                             break
@@ -271,6 +294,41 @@ class DirectDouyinDownloader:
         finally:
             if tmp_path.exists():
                 tmp_path.unlink()
+
+
+def _run_process(
+    *,
+    command: list[str],
+    timeout_seconds: int,
+    cancel_event: threading.Event | None,
+    timeout_code: str,
+) -> subprocess.CompletedProcess[str]:
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    started = time.monotonic()
+    try:
+        while process.poll() is None:
+            if cancel_event is not None and cancel_event.is_set():
+                _terminate_process(process)
+                raise DouyinAdapterError("task_canceled", "任务已取消")
+            if time.monotonic() - started > timeout_seconds:
+                _terminate_process(process)
+                raise DouyinAdapterError(timeout_code, f"命令执行超时：{timeout_seconds} 秒")
+            time.sleep(0.5)
+        stdout, stderr = process.communicate()
+        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+    except Exception:
+        if process.poll() is None:
+            _terminate_process(process)
+        raise
+
+
+def _terminate_process(process: subprocess.Popen[str]) -> None:
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
 
 
 def build_download_prefix(source_id: int, title: str | None) -> str:

@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.core.paths import ensure_storage_dirs
 from app.core.responses import fail
 from app.db.init_db import init_db
+from app.services.download_tasks import schedule_download_tasks
 
 
 def create_app() -> FastAPI:
@@ -29,6 +30,10 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(api_router)
+
+    @app.on_event("startup")
+    def schedule_pending_downloads() -> None:
+        schedule_download_tasks()
 
     static_dir = Path(__file__).resolve().parents[1] / "static"
     if static_dir.exists():

@@ -10,7 +10,7 @@ from app.db.models import DownloadTask, SourceItem, utc_now
 from app.schemas import TaskCreate
 from app.services.pagination import paginate
 from app.services.serializers import task_to_dict
-from app.services.download_tasks import run_download_task
+from app.services.download_tasks import request_cancel_task, schedule_download_tasks
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -34,14 +34,8 @@ def create_tasks(payload: TaskCreate, db: DbSession, _user: CurrentUser):
         created.append(task)
     db.commit()
     for task in created:
-        task = db.scalar(
-            select(DownloadTask)
-            .options(selectinload(DownloadTask.source_item).selectinload(SourceItem.account))
-            .where(DownloadTask.id == task.id)
-        )
-        if task is None:
-            continue
-        run_download_task(db, task)
+        db.refresh(task)
+    schedule_download_tasks()
     return ok([task_to_dict(task) for task in created])
 
 
@@ -78,7 +72,7 @@ def retry_task(task_id: int, response: Response, db: DbSession, _user: CurrentUs
     task.updated_at = utc_now()
     db.commit()
     db.refresh(task)
-    run_download_task(db, task)
+    schedule_download_tasks()
     return ok(task_to_dict(task))
 
 
@@ -90,9 +84,14 @@ def cancel_task(task_id: int, response: Response, db: DbSession, _user: CurrentU
     if task.status not in {"pending", "running"}:
         response.status_code = 400
         return fail("task_not_cancelable", "只有 pending/running 任务可以取消")
+    if task.status == "running":
+        request_cancel_task(task.id)
     task.status = "canceled"
+    task.error_code = task.error_code or "task_canceled"
+    task.error_message = task.error_message or "任务已取消"
     task.finished_at = utc_now()
     task.updated_at = task.finished_at
     db.commit()
     db.refresh(task)
+    schedule_download_tasks()
     return ok(task_to_dict(task))

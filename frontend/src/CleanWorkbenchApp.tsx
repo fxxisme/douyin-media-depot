@@ -22,6 +22,7 @@ import {
   LogOut,
   RefreshCw,
   Search,
+  ScrollText,
   Settings,
   ShieldCheck,
   SlidersHorizontal,
@@ -74,6 +75,7 @@ function Shell() {
   const nav = [
     { to: "/media", label: "素材", icon: Film },
     { to: "/tasks", label: "任务", icon: Clock3 },
+    { to: "/logs", label: "执行日志", icon: ScrollText },
     { to: "/accounts", label: "账号", icon: UserRound },
     { to: "/settings", label: "系统", icon: Settings },
   ] as const;
@@ -486,6 +488,41 @@ function TasksPage() {
   );
 }
 
+function LogsPage() {
+  const [status, setStatus] = useState("");
+  const logs = useQuery({
+    queryKey: ["task-logs", status],
+    queryFn: () => api.tasks(status || undefined),
+    refetchInterval: 4000,
+  });
+
+  return (
+    <section className="workbench-page">
+      <PageHeader eyebrow="Execution log" title="执行日志" description="查看任务卡住、失败、取消和下载链路的错误来源。" />
+      <div className="status-strip">
+        {["", "pending", "running", "succeeded", "failed", "canceled"].map((item) => (
+          <button key={item || "all"} className={`chip ${status === item ? "is-active" : ""}`} onClick={() => setStatus(item)}>
+            {taskStatusLabel(item)}
+          </button>
+        ))}
+      </div>
+      <section className="desk-panel">
+        {logs.isLoading ? (
+          <LoadingBlock />
+        ) : logs.data?.items.length ? (
+          <div className="log-list">
+            {logs.data.items.map((task) => (
+              <TaskLogRow key={task.id} task={task} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState text="暂无执行日志。" />
+        )}
+      </section>
+    </section>
+  );
+}
+
 function AccountsPage() {
   const [name, setName] = useState("");
   const [cookie, setCookie] = useState("");
@@ -689,6 +726,35 @@ function SettingsPage() {
   );
 }
 
+function TaskLogRow({ task }: { task: DownloadTask }) {
+  return (
+    <article className="log-card">
+      <div className="row-title-line">
+        <div>
+          <h3>{task.source_title ?? `来源 #${task.source_item_id}`}</h3>
+          <p>
+            {downloadTypeLabel(task.download_type)} · {task.source_author ?? "未知作者"}
+          </p>
+        </div>
+        <StatusBadge status={task.status} />
+      </div>
+      <div className="log-meta">
+        <span>创建：{formatDateTime(task.created_at)}</span>
+        <span>开始：{formatDateTime(task.started_at)}</span>
+        <span>结束：{formatDateTime(task.finished_at)}</span>
+        <span>更新：{formatDateTime(task.updated_at)}</span>
+      </div>
+      <div className="progress-track">
+        <span style={{ width: `${task.progress}%` }} />
+      </div>
+      <p className="log-source">来源判断：{taskErrorSource(task.error_code)}</p>
+      {task.error_code && <p className="mono small-text">error_code: {task.error_code}</p>}
+      {task.error_message && <p className="error-box">{task.error_message}</p>}
+      {task.stderr_tail && <pre className="log-tail">{task.stderr_tail}</pre>}
+    </article>
+  );
+}
+
 function TaskRow({ task, onRetry, onCancel }: { task: DownloadTask; onRetry: () => void; onCancel: () => void }) {
   return (
     <article className="task-row">
@@ -874,6 +940,26 @@ function downloadTypeLabel(value: DownloadTask["download_type"]) {
   return "视频 + 音频";
 }
 
+function taskErrorSource(code: string | null) {
+  if (!code) return "暂无错误信息";
+  if (code === "task_canceled") return "用户取消";
+  if (code === "service_restarted") return "服务重启";
+  if (code === "unexpected_error") return "程序异常";
+  if (code.endsWith("_timeout")) return "超时";
+  if (code.startsWith("account_") || code.startsWith("douyin_") || code === "sec_user_id_required") return "抖音接口 / Cookie";
+  if (code.startsWith("download_")) return "网络下载";
+  if (code.startsWith("yt_dlp_")) return "yt-dlp";
+  if (code.startsWith("audio_extract_")) return "ffmpeg";
+  return "其他错误";
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
+}
+
 function taskStatusLabel(value: string) {
   if (!value) return "全部";
   if (value === "pending") return "等待中";
@@ -908,9 +994,10 @@ const rootRoute = createRootRoute({ component: Root });
 const mediaRoute = createRoute({ getParentRoute: () => rootRoute, path: "/", component: MediaPage });
 const mediaAliasRoute = createRoute({ getParentRoute: () => rootRoute, path: "/media", component: MediaPage });
 const tasksRoute = createRoute({ getParentRoute: () => rootRoute, path: "/tasks", component: TasksPage });
+const logsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/logs", component: LogsPage });
 const accountsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/accounts", component: AccountsPage });
 const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/settings", component: SettingsPage });
-const routeTree = rootRoute.addChildren([mediaRoute, mediaAliasRoute, tasksRoute, accountsRoute, settingsRoute]);
+const routeTree = rootRoute.addChildren([mediaRoute, mediaAliasRoute, tasksRoute, logsRoute, accountsRoute, settingsRoute]);
 const router = createRouter({ routeTree, defaultPreload: "intent" });
 
 declare module "@tanstack/react-router" {
