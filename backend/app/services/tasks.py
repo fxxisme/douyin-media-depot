@@ -1,3 +1,8 @@
+from app.services.download_tasks import run_download_task
+
+__all__ = ["run_download_task"]
+
+_legacy_tasks_source = r'''
 from __future__ import annotations
 
 from sqlalchemy.orm import Session
@@ -5,9 +10,10 @@ from sqlalchemy.orm import Session
 from app.core.crypto import decrypt_text
 from app.core.config import settings
 from app.db.models import DownloadTask, MediaFile, utc_now
-from app.services.douyin.adapter import DouyinAdapterError, YtDlpAdapter, build_download_prefix
+from app.services.douyin.client import DirectDouyinDownloader, DouyinAdapterError, YtDlpAdapter, build_download_prefix
 
 yt_dlp_adapter = YtDlpAdapter()
+direct_downloader = DirectDouyinDownloader()
 
 
 def run_download_task(db: Session, task: DownloadTask) -> DownloadTask:
@@ -66,3 +72,4 @@ def run_download_task(db: Session, task: DownloadTask) -> DownloadTask:
         db.commit()
         db.refresh(task)
     return task
+'''

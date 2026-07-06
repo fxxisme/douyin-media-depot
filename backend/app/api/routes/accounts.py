@@ -9,7 +9,7 @@ from app.core.paths import safe_slug
 from app.core.responses import fail, ok
 from app.db.models import Account, DownloadTask, SourceItem, utc_now
 from app.schemas import AccountCreate, AccountUpdate, SyncRequest
-from app.services.douyin.adapter import DouyinAdapter, DouyinAdapterError
+from app.services.douyin.client import DouyinAdapter, DouyinAdapterError
 from app.services.serializers import account_to_dict
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
@@ -116,8 +116,9 @@ def sync_account(account_id: int, payload: SyncRequest, response: Response, db: 
         response.status_code = 400
         return fail("account_disabled", "账号已停用")
     try:
-        adapter.verify_cookie(decrypt_text(account.encrypted_cookie))
-        items = adapter.sync_items(source_type=payload.source_type, limit=payload.limit)
+        cookie = decrypt_text(account.encrypted_cookie)
+        adapter.verify_cookie(cookie)
+        items = adapter.sync_items(source_type=payload.source_type, limit=payload.limit, cookie=cookie)
     except DouyinAdapterError as exc:
         account.status = "expired" if exc.code == "account_cookie_invalid" else account.status
         account.updated_at = utc_now()
@@ -137,6 +138,15 @@ def sync_account(account_id: int, payload: SyncRequest, response: Response, db: 
             )
         )
         if exists:
+            exists.platform = item.get("platform", exists.platform)
+            exists.title = item.get("title") or exists.title
+            exists.author_name = item.get("author_name") or exists.author_name
+            exists.author_id = item.get("author_id") or exists.author_id
+            exists.cover_url = item.get("cover_url") or exists.cover_url
+            exists.detail_url = item.get("detail_url") or exists.detail_url
+            exists.duration_seconds = item.get("duration_seconds") or exists.duration_seconds
+            exists.published_at = item.get("published_at") or exists.published_at
+            exists.raw_json = item.get("raw_json") or exists.raw_json
             exists.last_seen_at = now
             continue
         db.add(SourceItem(account_id=account.id, source_type=payload.source_type, first_seen_at=now, last_seen_at=now, **item))

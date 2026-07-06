@@ -1,3 +1,24 @@
+from app.services.douyin.client import (
+    DirectDouyinDownloader,
+    DouyinAdapter,
+    DouyinAdapterError,
+    DouyinWebClient,
+    YtDlpAdapter,
+    YtDlpDownloadResult,
+    build_download_prefix,
+)
+
+__all__ = [
+    "DirectDouyinDownloader",
+    "DouyinAdapter",
+    "DouyinAdapterError",
+    "DouyinWebClient",
+    "YtDlpAdapter",
+    "YtDlpDownloadResult",
+    "build_download_prefix",
+]
+
+_legacy_adapter_source = r'''
 from __future__ import annotations
 
 import json
@@ -116,3 +137,4 @@ def _find_downloaded_media(output_dir: Path, filename_prefix: str) -> Path | Non
 
 def build_download_prefix(source_id: int, title: str | None) -> str:
     return f"{source_id}-{safe_filename(title or 'douyin-video', max_length=60)}"
+'''

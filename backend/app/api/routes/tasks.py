@@ -10,7 +10,7 @@ from app.db.models import DownloadTask, SourceItem, utc_now
 from app.schemas import TaskCreate
 from app.services.pagination import paginate
 from app.services.serializers import task_to_dict
-from app.services.tasks import run_download_task
+from app.services.download_tasks import run_download_task
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
