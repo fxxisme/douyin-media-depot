@@ -165,6 +165,8 @@ function MediaPage() {
   const [manualUrl, setManualUrl] = useState("");
   const [manualTitle, setManualTitle] = useState("");
   const [manualAccountId, setManualAccountId] = useState("");
+  const [sourceDownloadedFilter, setSourceDownloadedFilter] = useState<"all" | "pending" | "downloaded">("pending");
+  const [selectedSourceIds, setSelectedSourceIds] = useState<number[]>([]);
   const queryClient = useQueryClient();
   const accounts = useQuery({ queryKey: ["accounts"], queryFn: api.accounts });
   const media = useQuery({
@@ -172,16 +174,26 @@ function MediaPage() {
     queryFn: () => api.media({ media_type: mediaType, keyword, author, account_id: accountId ? Number(accountId) : undefined }),
   });
   const sources = useQuery({
-    queryKey: ["sources", keyword, accountId],
-    queryFn: () => api.sources({ keyword, account_id: accountId ? Number(accountId) : undefined }),
+    queryKey: ["sources", keyword, accountId, sourceDownloadedFilter],
+    queryFn: () =>
+      api.sources({
+        keyword,
+        account_id: accountId ? Number(accountId) : undefined,
+        downloaded: sourceDownloadedFilter === "all" ? undefined : sourceDownloadedFilter === "downloaded",
+      }),
   });
   const deleteMedia = useMutation({
     mutationFn: api.deleteMedia,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["media"] }),
   });
-  const createTask = useMutation({
-    mutationFn: (sourceId: number) => api.createTasks([sourceId], mediaType),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+  const createTasks = useMutation({
+    mutationFn: (sourceIds: number[]) => api.createTasks(sourceIds, mediaType),
+    onSuccess: async () => {
+      setSelectedSourceIds([]);
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["sources"] });
+      await queryClient.invalidateQueries({ queryKey: ["media"] });
+    },
   });
   const createManualDownload = useMutation({
     mutationFn: async () => {
@@ -201,6 +213,13 @@ function MediaPage() {
       await queryClient.invalidateQueries({ queryKey: ["media"] });
     },
   });
+  const visibleSources = sources.data?.items ?? [];
+  const selectedSourceIdSet = useMemo(() => new Set(selectedSourceIds), [selectedSourceIds]);
+  const selectableSourceIds = visibleSources.filter((source) => !source.downloaded).map((source) => source.id);
+  const selectedCount = selectedSourceIds.length;
+  const toggleSourceSelection = (sourceId: number) => {
+    setSelectedSourceIds((ids) => (ids.includes(sourceId) ? ids.filter((id) => id !== sourceId) : [...ids, sourceId]));
+  };
 
   return (
     <section>
@@ -274,19 +293,76 @@ function MediaPage() {
           )}
         </div>
         <div className="panel overflow-hidden">
-          <SectionTitle icon={MoreHorizontal} title="已同步来源" />
+          <div className="border-b border-line p-4">
+            <div className="flex items-center gap-2">
+              <MoreHorizontal size={18} className="text-lake" />
+              <h2 className="font-semibold">可下载视频</h2>
+            </div>
+            <div className="mt-3 grid grid-cols-3 rounded-md border border-line bg-paper p-1">
+              {[
+                ["pending", "未下载"],
+                ["downloaded", "已下载"],
+                ["all", "全部"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  className={`rounded px-2 py-1 text-sm ${sourceDownloadedFilter === value ? "bg-lake text-white" : "text-ink/65"}`}
+                  onClick={() => {
+                    setSourceDownloadedFilter(value as "all" | "pending" | "downloaded");
+                    setSelectedSourceIds([]);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button className="btn h-9" disabled={!selectableSourceIds.length} onClick={() => setSelectedSourceIds(selectableSourceIds)}>
+                全选未下载
+              </button>
+              <button className="btn h-9" disabled={!selectedCount} onClick={() => setSelectedSourceIds([])}>
+                清空
+              </button>
+              <button className="btn btn-primary h-9" disabled={!selectedCount || createTasks.isPending} onClick={() => createTasks.mutate(selectedSourceIds)}>
+                {createTasks.isPending && <Loader2 className="animate-spin" size={16} />}
+                下载所选 {selectedCount ? `(${selectedCount})` : ""}
+              </button>
+            </div>
+            <ErrorLine error={createTasks.error} />
+          </div>
           {sources.isLoading ? (
             <LoadingRow />
-          ) : sources.data?.items.length ? (
+          ) : visibleSources.length ? (
             <div className="divide-y divide-line">
-              {sources.data.items.map((source) => (
-                <div className="p-4" key={source.id}>
-                  <p className="line-clamp-2 font-medium">{source.title ?? source.platform_item_id}</p>
-                  <p className="mt-1 text-sm text-ink/55">{source.author_name ?? "未知作者"} · {source.source_type}</p>
-                  <button className="btn mt-3 h-9" onClick={() => createTask.mutate(source.id)}>
-                    <Download size={16} />
-                    下载{mediaType === "audio" ? "音频" : "视频"}
-                  </button>
+              {visibleSources.map((source) => (
+                <div className="grid grid-cols-[auto_1fr] gap-3 p-4" key={source.id}>
+                  <input
+                    className="mt-1 h-4 w-4"
+                    type="checkbox"
+                    checked={selectedSourceIdSet.has(source.id)}
+                    disabled={source.downloaded}
+                    onChange={() => toggleSourceSelection(source.id)}
+                    aria-label={`选择 ${source.title ?? source.platform_item_id}`}
+                  />
+                  <div className="min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="line-clamp-2 font-medium">{source.title ?? source.platform_item_id}</p>
+                      <span
+                        className={`badge shrink-0 ${
+                          source.downloaded ? "border-green-600/25 bg-green-600/10 text-green-700" : "border-line bg-paper text-ink/60"
+                        }`}
+                      >
+                        {source.downloaded ? "已下载" : "未下载"}
+                      </span>
+                    </div>
+                    <p className="mt-1 truncate text-sm text-ink/55">
+                      {source.author_name ?? "未知作者"} · {source.source_type === "liked" ? "点赞" : source.source_type === "favorite" ? "收藏" : "手动"}
+                    </p>
+                    <button className="btn mt-3 h-9" disabled={source.downloaded || createTasks.isPending} onClick={() => createTasks.mutate([source.id])}>
+                      <Download size={16} />
+                      下载{mediaType === "audio" ? "音频" : "视频"}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

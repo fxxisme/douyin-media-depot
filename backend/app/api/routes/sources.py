@@ -33,11 +33,11 @@ def list_sources(
     if keyword:
         like = f"%{keyword}%"
         stmt = stmt.where(SourceItem.title.like(like) | SourceItem.author_name.like(like))
+    if downloaded is not None:
+        stmt = stmt.where(SourceItem.media_files.any() if downloaded else ~SourceItem.media_files.any())
     stmt = stmt.order_by(SourceItem.last_seen_at.desc())
     items, total = paginate(db, stmt, page, page_size)
     rows = [source_item_to_dict(item) for item in items]
-    if downloaded is not None:
-        rows = [row for row in rows if row["downloaded"] is downloaded]
     return ok({"items": rows, "page": page, "page_size": page_size, "total": total})
 
 

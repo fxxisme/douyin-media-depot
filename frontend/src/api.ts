@@ -58,7 +58,7 @@ export const api = {
   createManualSource: (payload: { account_id: number; url: string; title?: string }) =>
     request<SourceItem>("/sources/manual", { method: "POST", body: JSON.stringify(payload) }),
   sources: (filters: { account_id?: number; source_type?: string; keyword?: string; downloaded?: boolean }) =>
-    request<Page<SourceItem>>(`/sources${params({ ...filters, page: 1, page_size: 20 })}`),
+    request<Page<SourceItem>>(`/sources${params({ ...filters, page: 1, page_size: 100 })}`),
   tasks: (status?: string) => request<Page<DownloadTask>>(`/tasks${params({ status, page: 1, page_size: 50 })}`),
   createTasks: (source_item_ids: number[], download_type: "video" | "audio" | "both") =>
     request<DownloadTask[]>("/tasks", { method: "POST", body: JSON.stringify({ source_item_ids, download_type }) }),
