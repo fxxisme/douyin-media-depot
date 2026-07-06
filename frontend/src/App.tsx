@@ -415,6 +415,7 @@ function TasksPage() {
 function AccountsPage() {
   const [name, setName] = useState("");
   const [cookie, setCookie] = useState("");
+  const [secUserId, setSecUserId] = useState("");
   const [editingId, setEditingId] = useState("");
   const [showCookieGuide, setShowCookieGuide] = useState(false);
   const queryClient = useQueryClient();
@@ -423,10 +424,14 @@ function AccountsPage() {
   const cookieCheck = useMemo(() => inspectCookie(cookie), [cookie]);
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["accounts"] });
   const save = useMutation({
-    mutationFn: () => (selected ? api.updateAccount(selected.id, { name, cookie: cookie || undefined }) : api.createAccount({ name, cookie })),
+    mutationFn: () =>
+      selected
+        ? api.updateAccount(selected.id, { name, cookie, sec_user_id: secUserId })
+        : api.createAccount({ name, cookie, sec_user_id: secUserId }),
     onSuccess: () => {
       setName("");
       setCookie("");
+      setSecUserId("");
       setEditingId("");
       invalidate();
     },
@@ -443,6 +448,7 @@ function AccountsPage() {
     const account = accounts.data?.find((item) => String(item.id) === value);
     setName(account?.name ?? "");
     setCookie("");
+    setSecUserId(account?.sec_user_id ?? "");
   };
   return (
     <section>
@@ -472,11 +478,13 @@ function AccountsPage() {
           </select>
           <label className="mb-2 block text-sm font-medium">账号名称</label>
           <input className="input mb-3" value={name} onChange={(event) => setName(event.target.value)} placeholder="我的抖音" />
+          <label className="mb-2 block text-sm font-medium">sec_user_id</label>
+          <input className="input mb-3" value={secUserId} onChange={(event) => setSecUserId(event.target.value)} placeholder="MS4wLjABAAAA..." />
           <label className="mb-2 block text-sm font-medium">Cookie</label>
           <textarea className="textarea" value={cookie} onChange={(event) => setCookie(event.target.value)} placeholder="sessionid=..." />
           <CookieCheckView result={cookieCheck} />
           <ErrorLine error={save.error ?? verify.error ?? sync.error ?? toggle.error ?? remove.error} />
-          <button className="btn btn-primary mt-4 w-full" disabled={!name || (!selected && !cookie) || save.isPending}>
+          <button className="btn btn-primary mt-4 w-full" disabled={!name || !cookie || !secUserId || save.isPending}>
             保存
           </button>
         </form>
@@ -492,6 +500,7 @@ function AccountsPage() {
                     <div>
                       <p className="font-medium">{account.name}</p>
                       <p className="text-sm text-ink/55">{account.slug}</p>
+                      <p className="mt-1 max-w-md truncate text-xs text-ink/45">sec_user_id: {account.sec_user_id || "未填写"}</p>
                     </div>
                     <StatusBadge status={account.status} />
                   </div>
@@ -573,6 +582,9 @@ function CookieGuide() {
         <li>在 Headers 里复制 Request Headers 下的 Cookie。</li>
         <li>
           粘贴到这里，确认包含 <code>sessionid</code> 或 <code>sid_guard</code>。
+        </li>
+        <li>
+          同一个请求的 URL、Payload 或响应中通常能找到 <code>sec_user_id</code>，复制后填入账号表单。
         </li>
       </ol>
       <p className="mt-2 text-ember">Cookie 等同登录态，不要发给别人，也不要提交到 Git。</p>

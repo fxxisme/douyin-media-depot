@@ -20,6 +20,7 @@ export type Account = {
   id: number;
   name: string;
   slug: string;
+  sec_user_id: string;
   status: "active" | "expired" | "invalid" | "disabled";
   enabled: boolean;
   last_verified_at: string | null;

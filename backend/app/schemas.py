@@ -10,11 +10,13 @@ class LoginRequest(BaseModel):
 class AccountCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     cookie: str = Field(min_length=1)
+    sec_user_id: str = Field(min_length=1, max_length=500)
 
 
 class AccountUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     cookie: str | None = Field(default=None, min_length=1)
+    sec_user_id: str | None = Field(default=None, min_length=1, max_length=500)
     enabled: bool | None = None
 
 

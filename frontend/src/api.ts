@@ -45,8 +45,9 @@ export const api = {
   login: (password: string) => request<{ authenticated: boolean }>("/auth/login", { method: "POST", body: JSON.stringify({ password }) }),
   logout: () => request<{ authenticated: boolean }>("/auth/logout", { method: "POST" }),
   accounts: () => request<Account[]>("/accounts"),
-  createAccount: (payload: { name: string; cookie: string }) => request<Account>("/accounts", { method: "POST", body: JSON.stringify(payload) }),
-  updateAccount: (id: number, payload: Partial<{ name: string; cookie: string; enabled: boolean }>) =>
+  createAccount: (payload: { name: string; cookie: string; sec_user_id: string }) =>
+    request<Account>("/accounts", { method: "POST", body: JSON.stringify(payload) }),
+  updateAccount: (id: number, payload: Partial<{ name: string; cookie: string; sec_user_id: string; enabled: boolean }>) =>
     request<Account>(`/accounts/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   deleteAccount: (id: number) => request<{ deleted: boolean }>(`/accounts/${id}`, { method: "DELETE" }),
   verifyAccount: (id: number) => request<Account>(`/accounts/${id}/verify`, { method: "POST" }),

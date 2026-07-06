@@ -42,6 +42,7 @@ def create_account(payload: AccountCreate, db: DbSession, _user: CurrentUser):
         name=payload.name,
         slug=_unique_slug(db, payload.name),
         encrypted_cookie=encrypt_text(payload.cookie),
+        sec_user_id=payload.sec_user_id.strip(),
         status="active",
         enabled=True,
         created_at=now,
@@ -64,6 +65,8 @@ def update_account(account_id: int, payload: AccountUpdate, db: DbSession, _user
     if payload.cookie is not None:
         account.encrypted_cookie = encrypt_text(payload.cookie)
         account.status = "active"
+    if payload.sec_user_id is not None:
+        account.sec_user_id = payload.sec_user_id.strip()
     if payload.enabled is not None:
         account.enabled = payload.enabled
         if not payload.enabled:
@@ -118,7 +121,9 @@ def sync_account(account_id: int, payload: SyncRequest, response: Response, db: 
     try:
         cookie = decrypt_text(account.encrypted_cookie)
         adapter.verify_cookie(cookie)
-        items = adapter.sync_items(source_type=payload.source_type, limit=payload.limit, cookie=cookie)
+        if payload.source_type == "liked" and not account.sec_user_id:
+            raise DouyinAdapterError("sec_user_id_required", "同步点赞列表需要先填写 sec_user_id")
+        items = adapter.sync_items(source_type=payload.source_type, limit=payload.limit, cookie=cookie, sec_user_id=account.sec_user_id)
     except DouyinAdapterError as exc:
         account.status = "expired" if exc.code == "account_cookie_invalid" else account.status
         account.updated_at = utc_now()

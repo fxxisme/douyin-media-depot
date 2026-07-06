@@ -19,6 +19,7 @@ class Account(Base):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     slug: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
     encrypted_cookie: Mapped[str] = mapped_column(Text, nullable=False)
+    sec_user_id: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="active")
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_verified_at: Mapped[str | None] = mapped_column(String(40))

@@ -8,6 +8,7 @@ def account_to_dict(account: Account) -> dict:
         "id": account.id,
         "name": account.name,
         "slug": account.slug,
+        "sec_user_id": account.sec_user_id,
         "status": account.status,
         "enabled": account.enabled,
         "last_verified_at": account.last_verified_at,
