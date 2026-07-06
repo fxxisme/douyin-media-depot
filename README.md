@@ -162,6 +162,32 @@ docker compose pull
 docker compose up -d --remove-orphans
 ```
 
+也可以直接使用更新脚本：
+
+```bash
+./scripts/update.sh
+```
+
+如果刚推送代码，GitHub Actions 可能还在构建 GHCR 镜像。需要等到新镜像可拉取后再更新时，使用：
+
+```bash
+./scripts/update.sh --wait
+```
+
+脚本会循环执行 `docker compose pull`，直到本地镜像 ID 变化或超时。默认最多等待 600 秒，每 15 秒重试一次。
+
+更新后顺手清理未使用镜像：
+
+```bash
+./scripts/update.sh --prune
+```
+
+等待新镜像并清理旧镜像：
+
+```bash
+./scripts/update.sh --wait --prune
+```
+
 如果要固定到某个镜像版本，在 `.env` 里设置：
 
 ```env
