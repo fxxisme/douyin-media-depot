@@ -58,15 +58,15 @@ export const api = {
     }),
   createManualSource: (payload: { account_id: number; url: string; title?: string }) =>
     request<SourceItem>("/sources/manual", { method: "POST", body: JSON.stringify(payload) }),
-  sources: (filters: { account_id?: number; source_type?: string; keyword?: string; downloaded?: boolean }) =>
-    request<Page<SourceItem>>(`/sources${params({ ...filters, page: 1, page_size: 100 })}`),
+  sources: (filters: { account_id?: number; source_type?: string; keyword?: string; downloaded?: boolean; page?: number; page_size?: number }) =>
+    request<Page<SourceItem>>(`/sources${params({ ...filters, page: filters.page ?? 1, page_size: filters.page_size ?? 50 })}`),
   tasks: (status?: string) => request<Page<DownloadTask>>(`/tasks${params({ status, page: 1, page_size: 50 })}`),
   createTasks: (source_item_ids: number[], download_type: "video" | "audio" | "both") =>
     request<DownloadTask[]>("/tasks", { method: "POST", body: JSON.stringify({ source_item_ids, download_type }) }),
   retryTask: (id: number) => request<DownloadTask>(`/tasks/${id}/retry`, { method: "POST" }),
   cancelTask: (id: number) => request<DownloadTask>(`/tasks/${id}/cancel`, { method: "POST" }),
-  media: (filters: { media_type?: string; keyword?: string; author?: string; account_id?: number }) =>
-    request<Page<MediaFile>>(`/media${params({ ...filters, page: 1, page_size: 50 })}`),
+  media: (filters: { media_type?: string; keyword?: string; author?: string; account_id?: number; page?: number; page_size?: number }) =>
+    request<Page<MediaFile>>(`/media${params({ ...filters, page: filters.page ?? 1, page_size: filters.page_size ?? 50 })}`),
   deleteMedia: (id: number) => request<{ deleted: boolean }>(`/media/${id}`, { method: "DELETE" }),
   settings: () => request<AppSettings>("/settings"),
   updateSettings: (payload: Partial<Pick<AppSettings, "max_concurrent_downloads" | "audio_extract_mode">>) =>
