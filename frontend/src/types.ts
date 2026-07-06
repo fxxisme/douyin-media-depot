@@ -54,7 +54,10 @@ export type DownloadTask = {
   stderr_tail: string | null;
   source_title: string | null;
   source_author: string | null;
+  started_at: string | null;
+  finished_at: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export type MediaFile = {
