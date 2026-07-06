@@ -66,7 +66,8 @@ ADMIN_PASSWORD=替换为你的管理员密码
 ### 2. 启动
 
 ```bash
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
 访问：
@@ -134,17 +135,48 @@ location / {
 
 ```bash
 git pull
-docker compose down
-docker compose up -d --build
+docker compose pull
+docker compose up -d --remove-orphans
 ```
 
 如果是拉远程镜像，先确认 GitHub Actions 新镜像构建完成，再执行：
 
 ```bash
 docker compose pull
-docker compose down
-docker compose up -d
+docker compose up -d --remove-orphans
 ```
+
+## Docker 镜像和本地构建
+
+默认 `docker-compose.yml` 使用远端镜像，不在部署机器上构建：
+
+```yaml
+image: "ghcr.io/fxxisme/douyin-media-depot:${IMAGE_TAG:-latest}"
+```
+
+常规更新：
+
+```bash
+git pull
+docker compose pull
+docker compose up -d --remove-orphans
+```
+
+如果要固定到某个镜像版本，在 `.env` 里设置：
+
+```env
+IMAGE_TAG=951ace60
+```
+
+不设置时默认使用 `latest`。`docker compose pull` 只会在远端镜像 digest 变化时拉取新层，但 `latest` 每次发布都会移动到最新构建。
+
+本地开发或自己构建镜像时，使用 `docker-compose.dev.yml`：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
+
+这样默认部署继续使用 GHCR 镜像，本地开发才走 `Dockerfile` 构建。
 
 ## 本地开发启动
 

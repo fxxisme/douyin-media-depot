@@ -1,9 +1,6 @@
 services:
   douyin-media-depot:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ghcr.io/fxxisme/douyin-media-depot:latest
+    image: "ghcr.io/fxxisme/douyin-media-depot:${IMAGE_TAG:-latest}"
     container_name: douyin-media-depot
     restart: unless-stopped
     ports:

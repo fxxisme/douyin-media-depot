@@ -1,0 +1,6 @@
+services:
+  douyin-media-depot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: douyin-media-depot:dev
