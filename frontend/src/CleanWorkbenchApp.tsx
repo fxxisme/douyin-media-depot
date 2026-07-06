@@ -228,6 +228,9 @@ function MediaPage() {
   const toggleSourceSelection = (sourceId: number) => {
     setSelectedSourceIds((ids) => (ids.includes(sourceId) ? ids.filter((id) => id !== sourceId) : [...ids, sourceId]));
   };
+  const selectVisibleSources = () => {
+    setSelectedSourceIds((ids) => Array.from(new Set([...ids, ...selectableSourceIds])));
+  };
 
   return (
     <section className="workbench-page">
@@ -321,7 +324,7 @@ function MediaPage() {
               }}
             />
             <div className="toolbar-actions">
-              <button className="btn btn-small" type="button" disabled={!selectableSourceIds.length} onClick={() => setSelectedSourceIds(selectableSourceIds)}>
+              <button className="btn btn-small" type="button" disabled={!selectableSourceIds.length} onClick={selectVisibleSources}>
                 全选未下载
               </button>
               <button className="btn btn-small" type="button" disabled={!selectedCount} onClick={() => setSelectedSourceIds([])}>
@@ -356,10 +359,7 @@ function MediaPage() {
                 page={sources.data.page}
                 pageSize={sources.data.page_size}
                 total={sources.data.total}
-                onPageChange={(page) => {
-                  setSourcePage(page);
-                  setSelectedSourceIds([]);
-                }}
+                onPageChange={setSourcePage}
               />
             </>
           ) : (
